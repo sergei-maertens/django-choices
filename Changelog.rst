@@ -1,6 +1,43 @@
 =========
 Changelog
 =========
+1.4.3
+-----
+DjangoChoices now handles the 'default' choice specially. It allows
+to set the default choice on the class level::
+
+    >>> class PizzaTypes(DjangoChoices):
+    ...     new_york = ChoiceItem('ny')
+    ...     italian = ChoiceItem('it')
+    ...
+    ...     _default = new_york
+
+    >>> PizzaTypes._default
+    ... # 'ny'
+
+The `_default` attribute is underscore-prefixed to prevent nameclashes with
+existing `ChoiceItem`s.
+
+Additionally, a shortcut for model fields was added: `as_kwargs()`. Usage::
+
+    class Model(db.Model):
+        pizza_type = models.CharField(max_length=10, **PizzaTypes.as_kwargs())
+
+Which is equivalent with::
+
+    class Model(db.Model):
+        pizza_type = models.CharField(
+            max_length=10, choices=PizzaTypes.choices,
+            default=PizzaTypes.new_york, validators=[PizzaTypes.validator]
+        )
+
+`as_kwargs` takes an optional `validator` kwarg, whether to include the validators
+or not. If you have extra validators, pass `validator=False`.
+
+
+1.4.2
+-----
+Added Django 1.9 and Python 3.5 support.
 
 1.4 to 1.4.1
 ------------
