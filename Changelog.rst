@@ -20,7 +20,7 @@ existing `ChoiceItem`s.
 
 Additionally, a shortcut for model fields was added: `as_kwargs()`. Usage::
 
-    class Model(db.Model):
+    class Model(models.Model):
         pizza_type = models.CharField(max_length=10, **PizzaTypes.as_kwargs())
 
 Which is equivalent with::

@@ -113,6 +113,45 @@ value as well, and it will be determined from the label.
     )
 
 
+Default value
+-------------
+
+You can specify the default value for the choices with the `_default`
+attribute. The underscore serves to prevent nameclashes with choice items that
+may be named `default`.
+
+Usage:
+
+.. code-block:: python
+
+    >>> class PizzaTypes(DjangoChoices):
+    ...     new_york = ChoiceItem('ny')
+    ...     italian = ChoiceItem('it')
+    ...
+    ...     _default = new_york
+
+    >>> PizzaTypes._default
+    'ny'
+
+If not specified, the `_default` is just `None`.
+
+The default value can also be set to any arbitrary value, provided that it's
+present in `Choices.values`, e.g.:
+
+.. code-block:: python
+
+    >>> class PizzaTypes(DjangoChoices):
+    ...     new_york = ChoiceItem('ny')
+    ...     italian = ChoiceItem('it')
+    ...
+    ...     _default = 'ny'
+
+    >>> PizzaTypes._default
+    'ny'
+
+Setting it to a non-existent value will raise a `ValueError`.
+
+
 `DjangoChoices` class attributes
 --------------------------------
 
@@ -178,3 +217,41 @@ class.
 
     This validator had issues in Django 1.7 and up with the new migrations.
     validators have to be deconstructible. This was fixed in the 1.4 release.
+
+
+Shortcut class methods
+----------------------
+
+`as_kwargs(validator=True)`
++++++++++++++++++++++++++++
+
+Using `DjangoChoices` can sometimes get unwieldly. Continuing with the
+`PizzaTypes` choices, you might have a model:
+
+
+.. code-block:: python
+
+    >>> class Pizza(models.Model):
+    ...     name = models.CharField(max_length=25)
+    ...     pizza_type = models.CharField(
+    ...         max_length=10, choices=PizzaTypes.choices,
+    ...         default=PizzaTypes.new_york, valiators=[PizzaTypes.validator]
+    ...     )
+
+This can be shortcut by using `as_kwargs`:
+
+.. code-block:: python
+
+    >>> class Pizza(models.Model):
+    ...     name = models.CharField(max_length=25)
+    ...     pizza_type = models.CharField(max_length=10, **PizzaTypes.as_kwargs())
+
+
+By default, the validator is included. If you wish to specify the validators
+explicitly, or not use them at all, you can pass `validator=False` to `as_kwargs`:
+
+.. code-block:: python
+
+    >>> class Pizza(models.Model):
+    ...     name = models.CharField(max_length=25)
+    ...     pizza_type = models.CharField(max_length=10, **PizzaTypes.as_kwargs(validator=False))
