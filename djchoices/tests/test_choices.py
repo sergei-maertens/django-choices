@@ -14,6 +14,8 @@ class NumericTestClass(DjangoChoices):
     Item_2 = C(2)
     Item_3 = C(3)
 
+    _default = Item_0
+
 
 class StringTestClass(DjangoChoices):
     empty = ChoiceItem("", "")
@@ -162,3 +164,23 @@ class DjangoChoices(unittest.TestCase):
         self.assertEqual(deconstructed, (
             'djchoices.choices.ChoicesValidator', (NumericTestClass.values,), {}
         ))
+
+    def test_as_kwargs(self):
+        """
+        Test that DjangoChoices.as_kwargs() works as expected.
+        """
+        self.assertEqual(NumericTestClass.as_kwargs(), {
+            'choices': NumericTestClass.choices,
+            'default': NumericTestClass.Item_0,
+            'validators': [NumericTestClass.validator]
+        })
+
+        self.assertEqual(NumericTestClass.as_kwargs(validator=False), {
+            'choices': NumericTestClass.choices,
+            'default': NumericTestClass.Item_0,
+        })
+
+    def test_default(self):
+
+        self.assertEqual(NumericTestClass._default, NumericTestClass.Item_0)
+        self.assertIsNone(StringTestClass._default)

@@ -69,6 +69,8 @@ class DjangoChoicesMeta(type):
         values = {}
         choices = []
 
+        default = attrs.pop('_default', None)
+
         # Get all the fields from parent classes.
         parents = [b for b in bases if isinstance(b, DjangoChoicesMeta)]
         for kls in parents:
@@ -86,6 +88,9 @@ class DjangoChoicesMeta(type):
         for field_name in fields:
             val = fields[field_name]
             if isinstance(val, ChoiceItem):
+                if val == default:
+                    default._field_name = field_name
+
                 if val.label is not None:
                     label = val.label
                 else:
@@ -93,6 +98,8 @@ class DjangoChoicesMeta(type):
                     label = cls.name_clean.sub(" ", field_name)
 
                 val0 = label if val.value is None else val.value
+                if val == default:
+                    default.value = val0
                 choices.append((val0, label))
                 attrs[field_name] = StaticProp(val0)
                 setattr(labels, field_name, label)
@@ -100,11 +107,19 @@ class DjangoChoicesMeta(type):
             else:
                 choices.append((field_name, val.choices))
 
+        if isinstance(default, ChoiceItem):
+            default = default.value
+
+        # value check
+        if default is not None and default not in values:
+            raise ValueError('Invalid default value specified: %s' % default)
+
         attrs["choices"] = StaticProp(tuple(choices))
         attrs["labels"] = labels
         attrs["values"] = values
         attrs["_fields"] = fields
         attrs["validator"] = ChoicesValidator(values)
+        attrs["_default"] = default
 
         return super(DjangoChoicesMeta, cls).__new__(cls, name, bases, attrs)
 
@@ -133,3 +148,23 @@ class DjangoChoices(six.with_metaclass(DjangoChoicesMeta)):
     labels = Labels()
     values = {}
     validator = None
+    _default = None
+
+    @classmethod
+    def as_kwargs(cls, validator=True):
+        """
+        Return a dict with the boilerplate field params.
+
+        Usage:
+        >>> my_field = forms.CharField(**MyChoices.as_kwargs())
+
+        my_field now has choices=MyChoices.choices, validators=[MyChoices.validator]
+        and default=MyChoices._default.
+        """
+        dct = {
+            'choices': cls.choices,
+            'default': cls._default,
+        }
+        if validator:
+            dct['validators'] = [cls.validator]
+        return dct
